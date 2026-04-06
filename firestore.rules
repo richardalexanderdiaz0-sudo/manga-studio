@@ -1,0 +1,195 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: works
+    // Document ID: auto-generated
+    // Fields:
+    //   - title: string (required, 1-100 chars)
+    //   - description: string (required, 1-5000 chars)
+    //   - type: string (required, COMIC|MANGA|MANHWA)
+    //   - status: string (required, EN_EMISION|FINALIZADO|PROXIMAMENTE)
+    //   - coverUrl: string (required, URL)
+    //   - authorName: string (required)
+    //   - categories: list (required, max 20)
+    //   - tags: list (required, max 50)
+    //   - views: number (required, >= 0)
+    //   - likes: number (required, >= 0)
+    //   - dislikes: number (required, >= 0)
+    //   - createdAt: string (required, ISO 8601)
+    //   - totalChapters: number (required, >= 1)
+    //
+    // Collection: chapters
+    // Document ID: auto-generated
+    // Fields:
+    //   - workId: string (required)
+    //   - chapterNumber: number (required, >= 1)
+    //   - title: string (required, 0-100 chars)
+    //   - coverUrl: string (optional, URL)
+    //   - images: list (optional, max 200 URLs)
+    //   - pdfUrl: string (optional, URL)
+    //   - createdAt: string (required, ISO 8601)
+    //
+    // Collection: userLibrary
+    // Document ID: {userId}_{workId}
+    // Fields:
+    //   - userId: string (required, matches owner)
+    //   - workId: string (required)
+    //   - lastReadChapterId: string (optional)
+    //   - addedAt: string (required, ISO 8601)
+    //
+    // Collection: comments
+    // Document ID: auto-generated
+    // Fields:
+    //   - workId: string (required)
+    //   - userId: string (required, matches owner)
+    //   - userName: string (required)
+    //   - text: string (required, 1-1000 chars)
+    //   - createdAt: string (required, ISO 8601)
+    //   - likes: number (required, >= 0)
+    //
+    // Collection: reports
+    // Document ID: auto-generated
+    // Fields:
+    //   - workId: string (required)
+    //   - userId: string (required, matches owner)
+    //   - reason: string (required, 1-1000 chars)
+    //   - createdAt: string (required, ISO 8601)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (request.auth.token.email == "richardalexanderdiaz0@gmail.com" && request.auth.token.email_verified == true);
+    }
+
+    function isValidUrl(url) {
+      return url is string && (url.matches("^https://.*") || url.matches("^http://.*"));
+    }
+
+    function isValidDateString(dateStr) {
+      return dateStr is string && dateStr.matches("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*Z?$");
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidWork(data) {
+      return hasOnlyAllowedFields(['id', 'title', 'description', 'type', 'status', 'coverUrl', 'authorName', 'categories', 'tags', 'views', 'likes', 'dislikes', 'createdAt', 'totalChapters', 'releaseDate', 'isNew', 'isUpdated']) &&
+        data.title is string && data.title.size() > 0 && data.title.size() <= 100 &&
+        data.description is string && data.description.size() <= 5000 &&
+        data.type in ['COMIC', 'MANGA', 'MANHWA'] &&
+        data.status in ['EN_EMISION', 'FINALIZADO', 'PROXIMAMENTE'] &&
+        isValidUrl(data.coverUrl) &&
+        data.authorName is string &&
+        data.categories is list && data.categories.size() <= 20 &&
+        data.tags is list && data.tags.size() <= 50 &&
+        data.views is number && data.views >= 0 &&
+        data.likes is number && data.likes >= 0 &&
+        data.dislikes is number && data.dislikes >= 0 &&
+        isValidDateString(data.createdAt) &&
+        data.totalChapters is number && data.totalChapters >= 0;
+    }
+
+    function isValidChapter(data) {
+      return hasOnlyAllowedFields(['id', 'workId', 'chapterNumber', 'title', 'coverUrl', 'images', 'pdfUrl', 'createdAt']) &&
+        data.workId is string &&
+        data.chapterNumber is number && data.chapterNumber >= 0 &&
+        data.title is string && data.title.size() <= 100 &&
+        (data.coverUrl == "" || isValidUrl(data.coverUrl)) &&
+        data.images is list && data.images.size() <= 200 &&
+        (!('pdfUrl' in data) || data.pdfUrl == "" || isValidUrl(data.pdfUrl)) &&
+        isValidDateString(data.createdAt);
+    }
+
+    function isValidLibraryItem(data) {
+      return hasOnlyAllowedFields(['userId', 'workId', 'lastReadChapterId', 'addedAt']) &&
+        data.userId == request.auth.uid &&
+        data.workId is string &&
+        isValidDateString(data.addedAt);
+    }
+
+    function isValidComment(data) {
+      return hasOnlyAllowedFields(['id', 'workId', 'userId', 'userName', 'text', 'createdAt', 'likes']) &&
+        data.workId is string &&
+        data.userId == request.auth.uid &&
+        data.userName is string &&
+        data.text is string && data.text.size() > 0 && data.text.size() <= 1000 &&
+        isValidDateString(data.createdAt) &&
+        data.likes is number && data.likes >= 0;
+    }
+
+    function isValidReport(data) {
+      return hasOnlyAllowedFields(['id', 'workId', 'userId', 'reason', 'createdAt']) &&
+        data.workId is string &&
+        data.userId == request.auth.uid &&
+        data.reason is string && data.reason.size() > 0 && data.reason.size() <= 1000 &&
+        isValidDateString(data.createdAt);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /works/{workId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidWork(request.resource.data);
+      allow update: if isAdmin() && isValidWork(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /chapters/{chapterId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidChapter(request.resource.data);
+      allow update: if isAdmin() && isValidChapter(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /userLibrary/{itemId} {
+      allow read: if isAuthenticated() && itemId.startsWith(request.auth.uid);
+      allow create: if isAuthenticated() && isValidLibraryItem(request.resource.data) && itemId == request.auth.uid + "_" + request.resource.data.workId;
+      allow update: if isAuthenticated() && isOwner(resource.data.userId) && isValidLibraryItem(request.resource.data);
+      allow delete: if isAuthenticated() && isOwner(resource.data.userId);
+    }
+
+    match /comments/{commentId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && isValidComment(request.resource.data);
+      allow update: if isAuthenticated() && isOwner(resource.data.userId) && isValidComment(request.resource.data);
+      allow delete: if isAuthenticated() && isOwner(resource.data.userId);
+    }
+
+    match /reports/{reportId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated() && isValidReport(request.resource.data);
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    // Default deny
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "entities": {
+    "Work": {
+      "title": "Work",
+      "description": "A manga, manhwa, or comic work.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Title of the work" },
+        "description": { "type": "string", "description": "Synopsis" },
+        "type": { "type": "string", "enum": ["COMIC", "MANGA", "MANHWA"] },
+        "status": { "type": "string", "enum": ["EN_EMISION", "FINALIZADO", "PROXIMAMENTE"] },
+        "coverUrl": { "type": "string", "format": "url" },
+        "authorName": { "type": "string" },
+        "categories": { "type": "array", "items": { "type": "string" } },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "views": { "type": "number" },
+        "likes": { "type": "number" },
+        "dislikes": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "totalChapters": { "type": "number" }
+      },
+      "required": ["title", "type", "status", "coverUrl", "authorName"]
+    },
+    "Chapter": {
+      "title": "Chapter",
+      "description": "A chapter of a work.",
+      "type": "object",
+      "properties": {
+        "workId": { "type": "string" },
+        "chapterNumber": { "type": "number" },
+        "title": { "type": "string" },
+        "coverUrl": { "type": "string", "format": "url" },
+        "images": { "type": "array", "items": { "type": "string", "format": "url" } },
+        "pdfUrl": { "type": "string", "format": "url" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["workId", "chapterNumber"]
+    },
+    "UserLibraryItem": {
+      "title": "UserLibraryItem",
+      "description": "A work in a user's library.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "workId": { "type": "string" },
+        "lastReadChapterId": { "type": "string" },
+        "addedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "workId"]
+    },
+    "Comment": {
+      "title": "Comment",
+      "description": "A comment on a work.",
+      "type": "object",
+      "properties": {
+        "workId": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "text": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "likes": { "type": "number" }
+      },
+      "required": ["workId", "userId", "text"]
+    },
+    "Report": {
+      "title": "Report",
+      "description": "A report on a work.",
+      "type": "object",
+      "properties": {
+        "workId": { "type": "string" },
+        "userId": { "type": "string" },
+        "reason": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["workId", "userId", "reason"]
+    }
+  },
+  "firestore": {
+    "works": { "schema": "Work", "description": "Collection of manga/manhwa works" },
+    "chapters": { "schema": "Chapter", "description": "Collection of chapters for works" },
+    "userLibrary": { "schema": "UserLibraryItem", "description": "User's saved works" },
+    "comments": { "schema": "Comment", "description": "User comments on works" },
+    "reports": { "schema": "Report", "description": "User reports on works" }
+  }
+}
