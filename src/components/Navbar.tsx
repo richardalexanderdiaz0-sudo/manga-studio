@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Menu, X, User, LogOut, LayoutDashboard, BookOpen } from 'lucide-react';
+import { Search, Menu, X, User, LogOut, LayoutDashboard } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button, Input } from './ui';
 import { useAuth } from '@/src/contexts/AuthContext';
@@ -13,6 +13,7 @@ import { ADMIN_EMAIL } from '@/src/constants';
 import { NotificationBell } from './NotificationBell';
 import { AuthModal } from './AuthModal';
 import { InstallButton } from './InstallButton';
+import { Logo } from './Logo';
 
 export function Navbar() {
   const { t } = useTranslation();
@@ -37,9 +38,7 @@ export function Navbar() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-8">
           <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white">
-              <BookOpen className="h-5 w-5" />
-            </div>
+            <Logo size="md" />
             <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">MANGAVERSE</span>
           </Link>
 

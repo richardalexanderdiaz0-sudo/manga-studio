@@ -10,6 +10,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider } from './components/ui/Toast';
 import { Navbar } from './components/Navbar';
 import { BottomNav } from './components/BottomNav';
+import { Logo } from './components/Logo';
 import { Home } from './pages/Home';
 import { StoryDetail } from './pages/StoryDetail';
 import { Reader } from './pages/Reader';
@@ -63,9 +64,7 @@ export default function App() {
                 <div className="flex flex-col items-center justify-between gap-8 md:flex-row">
                   <div className="flex flex-col items-center md:items-start gap-4">
                     <div className="flex items-center gap-2">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white font-bold">
-                        M
-                      </div>
+                      <Logo size="sm" />
                       <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">MANGAVERSE</span>
                     </div>
                     <p className="text-sm text-slate-500 text-center md:text-left dark:text-slate-400">
